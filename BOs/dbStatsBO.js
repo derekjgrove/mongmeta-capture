@@ -6,10 +6,10 @@ module.exports = {
         this.collections = dbStats.collections
         this.views = dbStats.views
         this.objects = dbStats.objects
-        this.dataSize = dbStats.dataSize/conf.SCALE_MB
-        this.storageSize = dbStats.storageSize/conf.SCALE_MB
+        this.dataSize = dbStats.dataSize/conf.SCALE_GB
+        this.storageSize = dbStats.storageSize/conf.SCALE_GB
         this.indexes = dbStats.indexes
-        this.indexSize = dbStats.indexSize/conf.SCALE_MB
+        this.indexSize = dbStats.indexSize/conf.SCALE_GB
         this.diskPercentageUsed = (dbStats.fsUsedSize/dbStats.fsTotalSize)*100
         this.collectionsMetrics = []
 

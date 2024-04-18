@@ -3,7 +3,7 @@ const conf = require("./../conf.js")
 
 function mergeIndexSources (indexSizes, getIndexes) {
     for (var inxKey in getIndexes) {
-        getIndexes[inxKey].indexSize = indexSizes[inxKey]/conf.SCALE_KB
+        getIndexes[inxKey].indexSize = indexSizes[inxKey]/conf.SCALE_MB
         getIndexes[inxKey].type = 'mongod'
     }
     return getIndexes

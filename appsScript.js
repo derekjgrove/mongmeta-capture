@@ -3,10 +3,10 @@ const DB_COL_MAPPER = {
   "# Collections": "collections",
   "# Views": "views",
   "# Documents": "objects",
-  "Uncompressed Size (MB)": "dataSize",
-  "Compressed Size (MB)": "storageSize",
+  "Uncompressed Size (GB)": "dataSize",
+  "Compressed Size (GB)": "storageSize",
   "# Indexes": "indexes",
-  "Index Size (MB)": "indexSize",
+  "Index Size (GB)": "indexSize",
   "% Disk Allocation": "diskPercentageUsed"
 }
 
@@ -30,14 +30,14 @@ const TWO_COL_HEADERS = [
 const INDEX_HEADERS = [
   "Name",
   "Type",
-  "Size (KB)",
+  "Size (MB)",
   "Key"
 ]
 
 const INDEX_COL_MAPPER = {
   "Name": "name",
   "Type": "type",
-  "Size (KB)": "indexSize",
+  "Size (MB)": "indexSize",
   "Key": "key"
 }
 
