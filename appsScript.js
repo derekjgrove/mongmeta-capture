@@ -141,15 +141,17 @@ function createDataRowHelper_colHeader(columns, table, dataObj, isSummary = fals
   var summaryRow = []
   
   for (var colKey in columns) {
+
     var tr = table.appendTableRow()
     tr.setAttributes(TABLE_STYLE)
     tr.appendTableCell(colKey)
-    // tr.appendTableCell(dataObj[columns[colKey]])
 
-    var tmpData = dataObj[columns[colKey]]
+    var tmpData = dataObj[columns[colKey]] || ""
     if (typeof tmpData === "object") {
       tr.appendTableCell(JSON.stringify(tmpData, null, 2))
         .setAttributes(CODE_STYLE)
+    } else if (tmpData == null || tmpData === undefined) {
+      tr.appendTableCell("null")
     } else {
       tr.appendTableCell(tmpData)
     }
@@ -169,10 +171,12 @@ function createDataRowHelper(columns, table, dataObj) {
   tr.setAttributes(TABLE_STYLE)
   
   for (var colKey in columns) {
-    var tmpData = dataObj[columns[colKey]]
+    var tmpData = dataObj[columns[colKey]] || ""
     if (typeof tmpData === "object") {
       tr.appendTableCell(JSON.stringify(tmpData, null, 2))
         .setAttributes(CODE_STYLE)
+    } else if (tmpData == null || tmpData === undefined) {
+      tr.appendTableCell("null")
     } else {
       tr.appendTableCell(tmpData)
     }
@@ -222,7 +226,7 @@ function createCollTablenReturnSummary(collObject, dbCount, collCount) {
   return createDataRowHelper_colHeader(COLLECTION_COL_MAPPER, table, collObject, true)
 }
 
-function createIndexesTable(indexesArr, dbCount, collCount) {
+function createIndexesTable(indexesArr = [], dbCount, collCount) {
   var body = DocumentApp.getActiveDocument().getBody();
 
   var header3 = body.appendParagraph(`${dbCount}.${collCount}.2 Index Details`);
@@ -252,6 +256,6 @@ function createSampleDataTable(sampleDocObject, dbCount, collCount) {
   var tHeader = table.appendTableRow()
   createHeaderRowHelper(DOC_HEADERS, tHeader)
 
-  createDataRowHelper(DOC_COL_MAPPER, table, inxObject)
+  createDataRowHelper(DOC_COL_MAPPER, table, sampleDocObject)
 
 }
