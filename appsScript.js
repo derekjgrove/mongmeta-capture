@@ -123,7 +123,8 @@ function importStatsOrchestrator(clusterStats) {
       ++j
       collSummaryTable.push(createCollTablenReturnSummary(collObject, i, j))
       createIndexesTable(collObject.indexes, i, j)
-      // createSampleDataTable({sampleDoc: collObject.sampleDoc}, i, j)
+      createSampleDataTable({sampleDoc: collObject.sampleDoc}, i, j)
+      DocumentApp.getActiveDocument().saveAndClose()
     }
   }
 
