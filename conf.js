@@ -7,13 +7,23 @@ const RESERVED_DBS = [
     "local"
 ]
 const RESERVED_COLLECTIONS = [
-    "system.views"
+    "system"
+    // "system.views",
+    // "system.profile"
 ]
+const RESERVED_OPS = [
+    "command",
+    "getMore"
+]
+const OUTPUT_STYLES = {
+    th_line: "---------------------------------------------------------"
+}
 
 module.exports = {
     SCALE_KB,
     SCALE_MB,
     SCALE_GB,
     RESERVED_DBS,
-    RESERVED_COLLECTIONS
+    RESERVED_COLLECTIONS,
+    OUTPUT_STYLES
 }

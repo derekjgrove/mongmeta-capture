@@ -1,8 +1,9 @@
-const collStatsBO = require("./BOs/collStatsBO.js");
-const dbStatsBO = require("./BOs/dbStatsBO.js");
-const getCollectionInfosBO = require("./BOs/getCollectionInfosBO.js");
-const getIndexesBO = require("./BOs/getIndexesBO.js")
-const conf = require("./conf.js")
+const collStatsBO = require("./../BOs/collStatsBO.js");
+const dbStatsBO = require("./../BOs/dbStatsBO.js");
+const getCollectionInfosBO = require("./../BOs/getCollectionInfosBO.js");
+const getIndexesBO = require("./../BOs/getIndexesBO.js")
+const indexStatsBO = require("./../BOs/indexStatsBO.js")
+const conf = require("./../conf.js")
 
 var ret = []
 
@@ -11,6 +12,7 @@ if (!allowSampleDoc) {
     print("--eval 'var allowSampleDoc = true'")
 }
 
+var serverInfo = db.serverBuildInfo()
 
 var dbs = db.adminCommand({listDatabases: 1})
 dbs.databases = dbs['databases'].filter(_db => !conf.RESERVED_DBS.includes(_db.name));
@@ -22,21 +24,27 @@ for (var _db of dbs.databases) {
     var db = db.getSiblingDB(_db.name);
     var dbStats = new dbStatsBO.dbStatsBO(db.runCommand( { dbStats: 1 } ))
     var colls = db.getCollectionInfos()
-    colls = colls.filter(_coll => !conf.RESERVED_COLLECTIONS.includes(_coll.name))
+    colls = colls.filter(_coll => { 
+        var splitColl = _coll.name.split('.')
+        return !conf.RESERVED_COLLECTIONS.includes(splitColl[0])
+    })
     
     for (var coll of colls) {
         var collectionInfo = new getCollectionInfosBO.getCollectionInfoBO(coll)
 
         if (collectionInfo.type !== "view") {
-            var indexStats = new getIndexesBO.getIndexesBO(db.getCollection(coll.name).getIndexes())
+            var indexDefinitions = new getIndexesBO.getIndexesBO(db.getCollection(coll.name).getIndexes())
             var searchStats = []
-            if (collectionInfo.type !== "timeseries")  {
+            if (collectionInfo.type !== "timeseries" && serverInfo.versionArray[0] >= 6)  {
                 searchStats = db.getCollection(coll.name).aggregate([ { $listSearchIndexes: {} }, {$project: {name: 1, type: 1, key: "$latestDefinition", indexSize: {$toInt: false}}}]).toArray()
             }
-            var collStats = new collStatsBO.collStatsBO(db.getCollection(coll.name).stats(), indexStats.indexes)
- 
+            
+            var primaryIndexStats = new indexStatsBO.indexStatsBO(db.getCollection(coll.name).aggregate([{$indexStats:{}}], {readPreference: "primary" }).toArray())
+            var secondaryIndexStats = new indexStatsBO.indexStatsBO(db.getCollection(coll.name).aggregate([{$indexStats:{}}], {readPreference: "secondary" }).toArray())
+            console.log(coll.name)
+            var collStats = new collStatsBO.collStatsBO(db.getCollection(coll.name).stats(), indexDefinitions.indexes, primaryIndexStats.indexStats, secondaryIndexStats.indexStats)
             collectionInfo.indexes = [...Object.keys(collStats.indexes).map((key) => ({"name": key, ...collStats.indexes[key]})), ...searchStats]
-
+            collectionInfo.indexes.sort((a, b) => b.indexSize - a.indexSize);
             delete collStats.indexes
             collectionInfo = {...collectionInfo, ...collStats}
         }

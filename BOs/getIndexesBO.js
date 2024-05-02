@@ -18,7 +18,10 @@ module.exports = {
         for (var inx of getIndexes) {
             this.indexes[inx.name] = {}
 
-            if (inx["key"]) this.indexes[inx.name]["key"] = inx['key']
+            if (inx["key"]) {
+                this.indexes[inx.name]["key"] = inx['key']
+                this.indexes[inx.name]["flattened"] = JSON.stringify(inx['key'], null, 0).slice(0,-1)
+            }
             if (inx["sparse"]) this.indexes[inx.name]["sparse"] = inx['sparse']
             if (inx["collation"]) this.indexes[inx.name]["collation"] = inx['collation']
             if (inx["hidden"]) this.indexes[inx.name]["hidden"] = inx['hidden']
