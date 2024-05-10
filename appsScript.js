@@ -19,7 +19,8 @@ const COLLECTION_COL_MAPPER = {
   "Compressed Size (MB)": "storageSize",
   "# Indexes": "nindexes",
   "Index Size (MB)": "totalIndexSize",
-  "Additional Conf": "options"
+  "Additional Conf": "options",
+  "Ops Usage From Date": "since",
 }
 
 const TWO_COL_HEADERS = [
@@ -31,14 +32,53 @@ const INDEX_HEADERS = [
   "Name",
   "Type",
   "Size (MB)",
-  "Key"
+  "# Primary Ops",
+  "# Secondary Ops",
+  "Key",
+  "Options"
 ]
 
 const INDEX_COL_MAPPER = {
-  "Name": "name",
-  "Type": "type",
-  "Size (MB)": "indexSize",
-  "Key": "key"
+  "Name": {
+    input: "name",
+    autoMap: true,
+    size: 200
+  },
+  "Type": {
+    input: "type",
+    autoMap: true,
+    size: 50
+  },
+  "Size (MB)": {
+    input: "indexSize",
+    autoMap: true,
+    size: 50
+  },
+  "# Primary Ops": {
+    input: "primaryOps",
+    autoMap: true,
+    size: 75
+  },
+  "# Secondary Ops": {
+    input: "secondaryOps",
+    autoMap: true,
+    size: 80
+  },
+  "Key": {
+    input: "key",
+    autoMap: true,
+    size: 300
+  },
+  "Options": {
+    input: "options",
+    autoMap: true,
+    size: 300
+  },
+  "duplicate": {
+    input: "duplicate",
+    autoMap: false,
+    size: null
+  },
 }
 
 const DOC_HEADERS = [
@@ -66,6 +106,10 @@ const HEADER_ROW_BACKGROUND_COLOR = "#00ED64"
 
 const CODE_STYLE = {
   [DocumentApp.Attribute.FONT_FAMILY]: "Consolas;300",
+}
+
+const TABLE_ROW_ERR_STYLE = {
+  [DocumentApp.Attribute.FOREGROUND_COLOR]: "#970606"
 }
 
 
@@ -153,6 +197,9 @@ function createDataRowHelper_colHeader(columns, table, dataObj, isSummary = fals
         .setAttributes(CODE_STYLE)
     } else if (tmpData == null || tmpData === undefined) {
       tr.appendTableCell("null")
+    } else if (typeof tmpData === "number") {
+      var tempNum = Number(tmpData)
+      tr.appendTableCell(tempNum%1 > 0 ? tempNum.toFixed(4) : tempNum.toFixed(0) || 0)
     } else {
       tr.appendTableCell(tmpData)
     }
@@ -178,9 +225,46 @@ function createDataRowHelper(columns, table, dataObj) {
         .setAttributes(CODE_STYLE)
     } else if (tmpData == null || tmpData === undefined) {
       tr.appendTableCell("null")
+    } else if (typeof tmpData === "number") {
+      var tempNum = Number(tmpData)
+      tr.appendTableCell(tempNum%1 > 0 ? tempNum.toFixed(4) : tempNum.toFixed(0) || 0)
     } else {
       tr.appendTableCell(tmpData)
     }
+  }
+
+  return
+}
+
+function createDataRowHelper_Index(columns, table, dataObj) {
+  var tr = table.appendTableRow()
+  tr.setAttributes(TABLE_STYLE)
+  
+  for (var colKey in columns) {
+    var tmpData = dataObj[columns[colKey]["input"]] || ""
+
+    if (columns[colKey]["autoMap"] == true) {
+      var cell
+      if (typeof tmpData === "object") {
+        cell = tr.appendTableCell(JSON.stringify(tmpData, null, 2))
+          .setAttributes(CODE_STYLE)
+      } else if (tmpData == null || tmpData === undefined) {
+        cell = tr.appendTableCell("null")
+      } else if (typeof tmpData === "number") {
+        var tempNum = Number(tmpData)
+        cell = tr.appendTableCell(tempNum%1 > 0 ? tempNum.toFixed(4) : tempNum.toFixed(0) || 0)
+      } else {
+        cell = tr.appendTableCell(tmpData)
+      }
+      cell.setWidth(columns[colKey]["size"])
+    } else {
+      switch (columns[colKey]["input"]) {
+        case "duplicate":
+          tmpData == true && tr.setAttributes(TABLE_ROW_ERR_STYLE)
+          break;
+      }
+    }
+
   }
 
   return
@@ -240,7 +324,7 @@ function createIndexesTable(indexesArr = [], dbCount, collCount) {
   createHeaderRowHelper(INDEX_HEADERS, tHeader)
 
   for (var inxObject of indexesArr) {
-    createDataRowHelper(INDEX_COL_MAPPER, table, inxObject)
+    createDataRowHelper_Index(INDEX_COL_MAPPER, table, inxObject)
   }
 
 }

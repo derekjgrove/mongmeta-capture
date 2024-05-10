@@ -15,6 +15,7 @@ function mergeIndexSources (indexSizes, getIndexes, primaryIndexStats, secondary
             getIndexes[inxKey].flattened.length < _getIndex.flattened.length
         )
         getIndexes[inxKey].duplicate = dups.length > 0
+        delete getIndexes[inxKey].flattened
         since = primaryIndexStats[inxKey] ? primaryIndexStats[inxKey].since : null
     }
     return {indexes: getIndexes, since: since}
