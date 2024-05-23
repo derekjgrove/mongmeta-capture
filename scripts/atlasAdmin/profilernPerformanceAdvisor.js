@@ -1,7 +1,7 @@
 const httpClient = require('urllib');
 const GROUP_ID = "<ATLAS_PROJECT_ID>"
 const API_KEY = "<PUBLIC:PRIVATE>"
-const FILTER_HOSTS = [  // use if more than 1 cluster
+const FILTER_HOSTS = [  // use if more than 1 cluster per project
 
 ]
 const FIVE_DAYS = 832000000

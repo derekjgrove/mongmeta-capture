@@ -4,6 +4,7 @@ const getCollectionInfosBO = require("./../BOs/getCollectionInfosBO.js");
 const getIndexesBO = require("./../BOs/getIndexesBO.js")
 const indexStatsBO = require("./../BOs/indexStatsBO.js")
 const conf = require("./../conf.js")
+const utils = require("./../utils.js")
 
 var ret = []
 
@@ -41,7 +42,6 @@ for (var _db of dbs.databases) {
             
             var primaryIndexStats = new indexStatsBO.indexStatsBO(db.getCollection(coll.name).aggregate([{$indexStats:{}}], {readPreference: "primary" }).toArray())
             var secondaryIndexStats = new indexStatsBO.indexStatsBO(db.getCollection(coll.name).aggregate([{$indexStats:{}}], {readPreference: "secondary" }).toArray())
-            console.log(coll.name)
             var collStats = new collStatsBO.collStatsBO(db.getCollection(coll.name).stats(), indexDefinitions.indexes, primaryIndexStats.indexStats, secondaryIndexStats.indexStats)
             collectionInfo.indexes = [...Object.keys(collStats.indexes).map((key) => ({"name": key, ...collStats.indexes[key]})), ...searchStats]
             collectionInfo.indexes.sort((a, b) => b.indexSize - a.indexSize);
@@ -63,5 +63,8 @@ for (var _db of dbs.databases) {
 }
 
 
+var retChunks = utils.chunkSubstr(EJSON.stringify(ret), 50000)
 
-print(EJSON.stringify(ret))
+for (var retChunk of retChunks) {
+    console.log(retChunk)
+}

@@ -57,6 +57,13 @@ const DB_COL_MAPPER = {
     "isDuplicate": "duplicate"
   }
 
+  const INDEX_KEY_EXCLUDE = [
+    "v",
+    "key",
+    "name",
+    "background"
+  ]
+
   
 module.exports = {
     SCALE_KB,
@@ -68,5 +75,6 @@ module.exports = {
     DELIM,
     DB_COL_MAPPER,
     COLLECTION_COL_MAPPER,
-    INDEX_HEADERS
+    INDEX_HEADERS,
+    INDEX_KEY_EXCLUDE
 }
