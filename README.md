@@ -22,7 +22,7 @@ npm install
 This script uses the Atlas Admin API to capture Profiler and Performance Advisor output. The following steps must be completed:
 1. Create an Atlas Admin API key [[Instructions here](https://www.mongodb.com/docs/atlas/configure-api-access/)]
 2. Replace `GROUP_ID` and `API_KEY` in the file `scripts\atlasAdmin\profilernPerformanceAdvisor.js`
-3. If you run the script and find you have more than one cluster in the project you are running, you will need to add the hosts that you don't want in the `FILTER_HOSTS` array of the same script file which will be shown in the output. 
+3. (OPTIONAL) You can exclude clusters from project output with the `FILTER_CLUSTERS` variable
 
 
 ### Running
