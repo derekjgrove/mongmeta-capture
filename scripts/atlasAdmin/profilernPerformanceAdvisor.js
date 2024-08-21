@@ -1,27 +1,35 @@
 const httpClient = require('urllib');
 const querystring = require('node:querystring'); 
+
 const GROUP_ID = "<ATLAS_PROJECT_ID>"
 const API_KEY = "<PUBLIC:PRIVATE>"
-const KEY_DELIM = "$$$$$"
-const PRIMARY_NAME = "REPLICA_PRIMARY"
-const SECONDARY_NAME = "REPLICA_SECONDARY"
 const FILTER_CLUSTERS = [  // use if you want to exclude clusters from results
 
 ]
+
+const KEY_DELIM = "$$$$$"
+const PRIMARY_NAME = "REPLICA_PRIMARY"
+const SECONDARY_NAME = "REPLICA_SECONDARY"
+const TYPENAME_EXCLUDES = ['SHARD_CONFIG_SECONDARY', 'SHARD_CONFIG_PRIMARY']
+const TIMEOUT = 60000*5
 const FIVE_DAYS = 832000000
+const BASIC_REQ_OPTIONS = {
+    method: 'GET',
+    rejectUnauthorized: false,
+    digestAuth: `${API_KEY}`,
+    dataType: 'json',
+    headers: {
+        "Accept": "application/vnd.atlas.2023-11-15+json",
+    },
+    timeout: TIMEOUT
+}
 
 async function main () {
 
     // Basic auth check
     var verifyAccessRes = await httpClient.request(`https://cloud.mongodb.com/api/atlas/v2/groups/${GROUP_ID}/`, 
         {
-            method: 'GET',
-            rejectUnauthorized: false,
-            digestAuth: `${API_KEY}`,
-            dataType: 'json',
-            headers: {
-                "Accept": "application/vnd.atlas.2023-11-15+json",
-            }
+            ...BASIC_REQ_OPTIONS
         },
     )
 
@@ -34,44 +42,55 @@ async function main () {
     // Check if need to handle multiple clusters
     var clustersRes = await httpClient.request(`https://cloud.mongodb.com/api/atlas/v2/groups/${GROUP_ID}/clusters`, 
         {
-            method: 'GET',
-            rejectUnauthorized: false,
-            digestAuth: `${API_KEY}`,
-            dataType: 'json',
-            headers: {
-                "Accept": "application/vnd.atlas.2023-11-15+json",
-            }
+            ...BASIC_REQ_OPTIONS
         },
     )
 
     // Get the available processes
     var processesRes = await httpClient.request(`https://cloud.mongodb.com/api/atlas/v2/groups/${GROUP_ID}/processes`, 
         {
-            method: 'GET',
-            rejectUnauthorized: false,
-            digestAuth: `${API_KEY}`,
-            dataType: 'json',
-            headers: {
-                "Accept": "application/vnd.atlas.2023-11-15+json",
-            }
+            ...BASIC_REQ_OPTIONS
         },
     )
 
     // Map clusters to processes
-    var clusters = clustersRes.data.results.map(cluster => {
+    var clusters = await clustersRes.data.results.map(cluster => {
+        var temp = querystring.parse(cluster.connectionStrings.standard)
+        temp = Object.keys(temp)[0]
+        temp = temp.substring(0, temp.lastIndexOf("/") );
+        temp = temp.substring(10, temp.length)
+        var fields = temp.split(",")
+
+        var aliases = []
+        for (var field of fields) {
+            var subFields = field.split(":")
+            aliases.push(subFields[0])
+        }
+
         return { 
-            replicaSetName: querystring.parse(cluster.connectionStrings.standard).replicaSet,
-            name: cluster.name
+            aliases: aliases,
+            name: cluster.name,
+            clusterType: cluster.clusterType
         }
     });
 
-    var processes = processesRes.data.results.map(process => {
-        return {
-            clusterName: clusters.find(cluster => cluster.replicaSetName === process.replicaSetName).name,
-            id: process.id,
-            typeName: process.typeName
+    var processes = await processesRes.data.results.map(process => {
+        if (!TYPENAME_EXCLUDES.includes(process.typeName)) {
+            var parentCluster = clusters.find(cluster => cluster.aliases.includes(process.userAlias))
+
+            // currently mongos' logs are not sourced in atlas slowQueries, ideally this will be used for sharded cluster to also conduct scatter gather analysis
+            // typeName=SHARD_MONGOS
+
+            return {
+                clusterName: parentCluster.name,
+                id: process.id,
+                typeName: process.typeName
+            }
+           
+        } else {
+            return null
         }
-    });
+    }).filter( process => process);
 
 
     // Get the slow queries
@@ -80,25 +99,13 @@ async function main () {
     for (var process of processes.filter( _process => !FILTER_CLUSTERS.includes(_process.clusterName))) {
         var processSlowQueryRes = await httpClient.request(`https://cloud.mongodb.com/api/atlas/v2/groups/${GROUP_ID}/processes/${process.id}/performanceAdvisor/slowQueryLogs?duration=${FIVE_DAYS}`, 
             {
-                method: 'GET',
-                rejectUnauthorized: false,
-                digestAuth: `${API_KEY}`,
-                dataType: 'json',
-                headers: {
-                    "Accept": "application/vnd.atlas.2023-11-15+json",
-                }
+                ...BASIC_REQ_OPTIONS
             },
         )
 
         var processSuggestedIndexesRes = await httpClient.request(`https://cloud.mongodb.com/api/atlas/v2/groups/${GROUP_ID}/processes/${process.id}/performanceAdvisor/suggestedIndexes?duration=${FIVE_DAYS}`, 
             {
-                method: 'GET',
-                rejectUnauthorized: false,
-                digestAuth: `${API_KEY}`,
-                dataType: 'json',
-                headers: {
-                    "Accept": "application/vnd.atlas.2023-11-15+json",
-                }
+                ...BASIC_REQ_OPTIONS
             },
         )
 
@@ -192,7 +199,9 @@ async function main () {
         queryHashMap[performanceAdvisorObjKey] = {performanceAdvisorLeftOver: performanceAdvisorObj[performanceAdvisorObjKey]}
     }
       
-    console.log(JSON.stringify(queryHashMap))
+    for (var hashKey in queryHashMap) {
+        console.log(`{"${hashKey}":${JSON.stringify(queryHashMap[hashKey])}}`)
+    }
 }
 main()
 
