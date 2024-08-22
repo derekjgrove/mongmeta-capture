@@ -77,6 +77,9 @@ async function main () {
     var processes = await processesRes.data.results.map(process => {
         if (!TYPENAME_EXCLUDES.includes(process.typeName)) {
             var parentCluster = clusters.find(cluster => cluster.aliases.includes(process.userAlias))
+            
+            // handle hidden nodes
+            if (!parentCluster) { return null }
 
             // currently mongos' logs are not sourced in atlas slowQueries, ideally this will be used for sharded cluster to also conduct scatter gather analysis
             // typeName=SHARD_MONGOS
