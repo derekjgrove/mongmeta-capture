@@ -4,7 +4,9 @@ const conf = require("./../conf.js")
 
 
 module.exports = {
-    getCollectionInfoBO: function (getCollectionInfo) {
+    getCollectionInfoBO: function (getCollectionInfo, dbName) {
+        this.level = "collection"
+        this.db = dbName
         this.name = getCollectionInfo.name
         this.type = getCollectionInfo.type // [collection, timeseries, view] 
         if (getCollectionInfo.options.clusteredIndex !== undefined) {

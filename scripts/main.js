@@ -6,7 +6,8 @@ const indexStatsBO = require("./../BOs/indexStatsBO.js")
 const conf = require("./../conf.js")
 const utils = require("./../utils.js")
 
-var ret = []
+var _dbs = []
+var _collections = []
 
 if (!allowSampleDoc) {
     print("allowSampleDoc is unset or false, if you want to sample documents pleas add the eval option")
@@ -24,14 +25,15 @@ dbs.databases = dbs['databases'].filter(_db => !conf.RESERVED_DBS.includes(_db.n
 for (var _db of dbs.databases) {
     var db = db.getSiblingDB(_db.name);
     var dbStats = new dbStatsBO.dbStatsBO(db.runCommand( { dbStats: 1 } ))
+    _dbs.push(dbStats)
+
     var colls = db.getCollectionInfos()
     colls = colls.filter(_coll => { 
         var splitColl = _coll.name.split('.')
         return !conf.RESERVED_COLLECTIONS.includes(splitColl[0])
     })
-    
     for (var coll of colls) {
-        var collectionInfo = new getCollectionInfosBO.getCollectionInfoBO(coll)
+        var collectionInfo = new getCollectionInfosBO.getCollectionInfoBO(coll, _db.name)
 
         if (collectionInfo.type !== "view") {
             var indexDefinitions = new getIndexesBO.getIndexesBO(db.getCollection(coll.name).getIndexes())
@@ -55,16 +57,14 @@ for (var _db of dbs.databases) {
         }
 
         collectionInfo.sampleDoc = sampleDoc
-
-        dbStats.collectionsMetrics.push(collectionInfo)
+        _collections.push(collectionInfo)
     }
 
-    ret.push(dbStats)
 }
 
-
-var retChunks = utils.chunkSubstr(EJSON.stringify(ret), 50000)
-
-for (var retChunk of retChunks) {
-    console.log(retChunk)
+for (var _db of _dbs) {
+    console.log(`${EJSON.stringify(_db)}`)
+}
+for (var _collection of _collections) {
+    console.log(`${EJSON.stringify(_collection)}`)
 }
