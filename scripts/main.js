@@ -38,7 +38,13 @@ for (var _db of dbs.databases) {
         if (collectionInfo.type !== "view") {
             var indexDefinitions = new getIndexesBO.getIndexesBO(db.getCollection(coll.name).getIndexes())
             var searchStats = []
-            if (collectionInfo.type !== "timeseries" && serverInfo.versionArray[0] >= 6)  {
+            if (
+                collectionInfo.type !== "timeseries" && 
+                serverInfo.versionArray && 
+                serverInfo.versionArray[0] >= 6 &&
+                serverInfo.modules &&
+                serverInfo.modules.includes("enterprise")
+            )  {
                 searchStats = db.getCollection(coll.name).aggregate([ { $listSearchIndexes: {} }, {$project: {name: 1, type: 1, key: "$latestDefinition", indexSize: {$toInt: false}}}]).toArray()
             }
             
