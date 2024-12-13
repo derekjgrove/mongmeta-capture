@@ -74,3 +74,5 @@ for (var _db of _dbs) {
 for (var _collection of _collections) {
     console.log(`${EJSON.stringify(_collection)}`)
 }
+
+console.log(new Date().toISOString())
