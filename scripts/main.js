@@ -10,8 +10,13 @@ var _dbs = []
 var _collections = []
 
 if (!allowSampleDoc) {
-    print("allowSampleDoc is unset or false, if you want to sample documents pleas add the eval option")
+    print("allowSampleDoc is unset or false, if you want to sample documents please add the eval option")
     print("--eval 'var allowSampleDoc = true'")
+}
+
+if (!onPrem) {
+    print("onPrem is unset, by default mongmeta captures Atlas deployments, if you want to run this for self hosted deployments please add the eval option")
+    print("--eval 'var onPrem = true'")
 }
 
 var serverInfo = db.serverBuildInfo()
@@ -43,7 +48,8 @@ for (var _db of dbs.databases) {
                 serverInfo.versionArray && 
                 serverInfo.versionArray[0] >= 6 &&
                 serverInfo.modules &&
-                serverInfo.modules.includes("enterprise")
+                serverInfo.modules.includes("enterprise") &&
+                !onPrem
             )  {
                 searchStats = db.getCollection(coll.name).aggregate([ { $listSearchIndexes: {} }, {$project: {name: 1, type: 1, key: "$latestDefinition", indexSize: {$toInt: false}}}]).toArray()
             }
