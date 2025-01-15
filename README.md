@@ -4,8 +4,7 @@ mongmeta-capture includes multiple utilities to capture cluster level statistics
 ## DB data capture
 ```shell
 cd <PATH_TO_THIS_PACKAGE>/scripts
-# set allowSampleDoc=false if you don't want me to output sample document from each collection
-mongosh "mongodb+srv://<user>:<pass>@<cluster_uri>" --eval 'var allowSampleDoc = true' --file main.js
+mongosh "mongodb+srv://<user>:<pass>@<cluster_uri>" --file main.js
 ```
 
 ### viewer

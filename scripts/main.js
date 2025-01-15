@@ -9,11 +9,6 @@ const utils = require("./../utils.js")
 var _dbs = []
 var _collections = []
 
-if (!allowSampleDoc) {
-    print("allowSampleDoc is unset or false, if you want to sample documents pleas add the eval option")
-    print("--eval 'var allowSampleDoc = true'")
-}
-
 var serverInfo = db.serverBuildInfo()
 
 var dbs = db.adminCommand({listDatabases: 1})
@@ -58,9 +53,6 @@ for (var _db of dbs.databases) {
         }
 
         var sampleDoc = {redacted: true}
-        if (allowSampleDoc && allowSampleDoc == true) {
-            sampleDoc = db.getCollection(coll.name).findOne({})
-        }
 
         collectionInfo.sampleDoc = sampleDoc
         _collections.push(collectionInfo)
