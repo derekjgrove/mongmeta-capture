@@ -4,8 +4,7 @@ mongmeta-capture includes multiple utilities to capture cluster level statistics
 ## DB data capture
 ```shell
 cd <PATH_TO_THIS_PACKAGE>/scripts
-# set allowSampleDoc=false if you don't want me to output sample document from each collection
-mongosh "mongodb+srv://<user>:<pass>@<cluster_uri>" --eval 'var allowSampleDoc = true' --file main.js
+mongosh "mongodb+srv://<user>:<pass>@<cluster_uri>" --file main.js
 ```
 
 ### viewer
@@ -29,4 +28,12 @@ This script uses the Atlas Admin API to capture Profiler and Performance Advisor
 ```shell
 cd <PATH_TO_THIS_PACKAGE>/scripts/atlasAdmin
 node profilernPerformanceAdvisor.js
+```
+
+
+## Namespace Usage ($top)
+This script uses the MongoDB top command to get usage stats for each collection. Since these stats are persisted since last restart, this script by default compares usage within a 5 minute window.
+```shell
+cd <PATH_TO_THIS_PACKAGE>/scripts/profiling
+mongosh "mongodb+srv://<user>:<pass>@<cluster_uri>" --file top.js
 ```

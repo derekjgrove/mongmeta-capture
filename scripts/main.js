@@ -64,9 +64,6 @@ for (var _db of dbs.databases) {
         }
 
         var sampleDoc = {redacted: true}
-        if (allowSampleDoc && allowSampleDoc == true) {
-            sampleDoc = db.getCollection(coll.name).findOne({})
-        }
 
         collectionInfo.sampleDoc = sampleDoc
         _collections.push(collectionInfo)
