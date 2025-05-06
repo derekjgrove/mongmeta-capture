@@ -32,8 +32,12 @@ node profilernPerformanceAdvisor.js
 
 
 ## Namespace Usage ($top)
-This script uses the MongoDB top command to get usage stats for each collection. Since these stats are persisted since last restart, this script by default compares usage within a 5 minute window.
+This script uses the MongoDB top command to get usage stats for each collection. Since these stats are persisted since last restart, this script compares results in segments of 5 minutes.
+<br/>
+Supply how long you want the window to be, for example: for 1 hour, supply `WINDOW=60`
+
+Replace `60` with the desired duration in minutes.
 ```shell
 cd <PATH_TO_THIS_PACKAGE>/scripts/profiling
-mongosh "mongodb+srv://<user>:<pass>@<cluster_uri>" --file top.js
+mongosh "mongodb+srv://<user>:<pass>@<cluster_uri>" --file top.js --eval "WINDOW=60"
 ```
