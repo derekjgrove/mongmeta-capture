@@ -1,3 +1,5 @@
+const { version } = require('./package.json')
+
 const SCALE_KB = 1024
 const SCALE_MB = 1024*1024
 const SCALE_GB = 1024*1024*1024
@@ -64,6 +66,8 @@ const DB_COL_MAPPER = {
     "background"
   ]
 
+
+  const VERSION = version || "unknown"
   
 module.exports = {
     SCALE_KB,
@@ -76,5 +80,6 @@ module.exports = {
     DB_COL_MAPPER,
     COLLECTION_COL_MAPPER,
     INDEX_HEADERS,
-    INDEX_KEY_EXCLUDE
+    INDEX_KEY_EXCLUDE,
+    VERSION
 }

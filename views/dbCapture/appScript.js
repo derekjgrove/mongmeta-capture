@@ -1,3 +1,7 @@
+const INFO_MAPPER = {
+  "Message": "name"
+}
+
 const DB_COL_MAPPER = {
   "Name": "name",
   "# Collections": "collections",
@@ -18,9 +22,10 @@ const COLLECTION_COL_MAPPER = {
   "Avg Doc Size (KB)": "avgObjSize",
   "Uncompressed Size (MB)": "size",
   "Compressed Size (MB)": "storageSize",
-  "Fragmented Storage (MB)": "storageReclaimable",
+  "Fragmented Storage (MB)": "freeStorageSize",
   "# Indexes": "nindexes",
   "Index Size (MB)": "totalIndexSize",
+  "Fragmented Index Size (MB)": "indexFreeStorageSize",
   "Ops Usage From Date": "since",
   "Additional Conf": "options",
 }
@@ -36,6 +41,7 @@ const TWO_COL_HEADERS = [
     "Name": "name",
     "Type": "type",
     "Size (MB)": "indexSize",
+    "Fragmented Size (MB)": "indexFreeStorageSize",
     "# Primary Ops": "primaryOps",
     "# Secondary Ops": "secondaryOps",
     "Key": "key",
@@ -56,6 +62,11 @@ const INDEX_COL_MAPPER = {
   },
   "Size (MB)": {
     input: "indexSize",
+    autoMap: true,
+    size: 50
+  },
+  "Fragmented Size (MB)": {
+    input: "indexFreeStorageSize",
     autoMap: true,
     size: 50
   },
@@ -120,6 +131,7 @@ const TABLE_ROW_ERR_STYLE = {
 }
 
 const SHEETS = [
+  {"Info": 1},
   {"DB Stats": 1},
   {"Collection Stats": 2},
   {"Index Stats": 2},
@@ -147,10 +159,12 @@ function importStatsOrchestrator(clusterStats) {
   var dbSummaryTable = [Object.keys(DB_COL_MAPPER)]
 
   createNewSheets()
-  createTableHeader(0, DB_COL_MAPPER)
-  createTableHeader(1, COLLECTION_COL_MAPPER)
-  createTableHeader(2, INDEX_HEADERS)
+  createTableHeader(0, INFO_MAPPER)
+  createTableHeader(1, DB_COL_MAPPER)
+  createTableHeader(2, COLLECTION_COL_MAPPER)
+  createTableHeader(3, INDEX_HEADERS)
 
+  var x = 1
   var i = 1
   var j = 1
   var k = 1
@@ -158,14 +172,17 @@ function importStatsOrchestrator(clusterStats) {
   for (var obj of clusterStats) {
     obj = JSON.parse(obj)
     console.log(obj)
-    if (obj.level === "db") {
+    if (obj.level === "info") {
+      ++x
+      createInfoTablenReturnSummary(obj, x, 0)
+    } else if (obj.level === "db") {
       ++i
-      dbSummaryTable.push(createDBTablenReturnSummary(obj, i, 0, j))
+      dbSummaryTable.push(createDBTablenReturnSummary(obj, i, 1, j))
     } else {
       var collSummaryTable = [Object.keys(COLLECTION_COL_MAPPER)]
       ++j
-      collSummaryTable.push(createCollTablenReturnSummary({dbName: obj.db, ...obj}, i, 1, j))
-      var inxCount = createIndexesTable({dbName: obj.db, ...obj}, k, 2, j)
+      collSummaryTable.push(createCollTablenReturnSummary({dbName: obj.db, ...obj}, i, 2, j))
+      var inxCount = createIndexesTable({dbName: obj.db, ...obj}, k, 3, j)
       k = k + inxCount
       // DocumentApp.getActiveDocument().saveAndClose()
     }
@@ -220,6 +237,13 @@ function createTableHeader(sheetRef, headers) {
   body.setTextStyle(HEADER_ROW_STYLE);
   sheet.setFrozenRows(1);
   sheet.setFrozenColumns(Object.values(SHEETS[sheetRef])[0]);
+}
+
+function createInfoTablenReturnSummary(infoObject, infoCount, sheetRef) {
+  var sheet = SpreadsheetApp.getActive().getSheetByName(Object.keys(SHEETS[sheetRef])[0])
+  var body = sheet.getRange(infoCount, 1, 1, Object.keys(INFO_MAPPER).length)  
+
+  return createDataRowHelper_colHeader(INFO_MAPPER, body, infoObject, true)
 }
 
 
