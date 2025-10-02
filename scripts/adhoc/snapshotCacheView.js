@@ -14,6 +14,8 @@ const COLL_OUT = []
 var total = 0
 var inxTotall = 0
 
+db.getMongo().setReadPref('secondary')
+
 var dbs = db.adminCommand({listDatabases: 1})
 dbs.databases = dbs['databases'].filter(_db => !RESERVED_DBS.includes(_db.name));
 for (var _db of dbs.databases) {
