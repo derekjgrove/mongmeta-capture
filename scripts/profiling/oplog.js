@@ -25,22 +25,20 @@ db.getSiblingDB(OPLOG_DB_NAME).getCollection(OPLOG_COLLECTION_NAME).createIndex(
     wall: -1
 });
 
+
 while (true) {
     const indexStats = db.getSiblingDB(OPLOG_DB_NAME).getCollection(OPLOG_COLLECTION_NAME).aggregate([
-      {
-        $indexStats: {}
-      },
-      {
-        $match: {
-          building: true
-        }
-      },
+      { $indexStats: {} },
+      { $match: { building: true } },
       { $count: "stillBuilding" }
     ]).toArray();
-    if (indexStats.length > 0 && indexStats[0].stillBuilding === 0) {
+    const stillBuilding = (indexStats.length && indexStats[0].stillBuilding) ? indexStats[0].stillBuilding : 0;
+    if (stillBuilding === 0) {
         break;
     }
+    sleep(1000);
 }
+
 
 // Help function
 if (typeof help !== "undefined" && help==true) {
@@ -79,7 +77,6 @@ function roundUpToNearest0or5Min(date) {
 // Get oplog bounds if not specified
 let firstWall, lastWall;
 if (typeof startTime === "undefined" || typeof endTime === "undefined") {
-    print("i have made it here")
     const collection = db.getSiblingDB(OPLOG_DB_NAME).getCollection(OPLOG_COLLECTION_NAME);
     if (typeof startTime === "undefined") {
         const firstDoc = collection.find().sort({$natural: 1}).limit(1).toArray()[0];
@@ -108,7 +105,7 @@ if (OUTPUT_FORMAT === 'json') {
             namespace: FILTER_NAMESPACE
         }
     }));
-} else {
+} else if (OUTPUT_FORMAT === 'csv' && typeof help !== "undefined" && help==true) {
     print(`# Configuration: DB=${OPLOG_DB_NAME}, Collection=${OPLOG_COLLECTION_NAME}, Start=${START_TIME.toISOString()}, End=${END_TIME.toISOString()}, Interval=${INTERVAL_MINUTES}min`);
     if (FILTER_NAMESPACE) {
         print(`# Filtering namespace: ${FILTER_NAMESPACE}`);
@@ -156,21 +153,4 @@ for (var _ns of ns) {
         }
     }
     namespaces.push({ ns: _ns, totalWrites: _totalWrites })
-}
-
-// Summary output
-namespaces.sort((a, b) => b.totalWrites - a.totalWrites);
-
-if (OUTPUT_FORMAT === 'json') {
-    print(JSON.stringify({
-        summary: {
-            title: "Namespaces by total writes",
-            data: namespaces
-        }
-    }));
-} else {
-    print("\n\nNamespaces by total writes");
-    for (var ns of namespaces) {
-        print(`${ns.ns};${ns.totalWrites}`);
-    }
 }
