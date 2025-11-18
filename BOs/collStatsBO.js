@@ -30,9 +30,11 @@ function mergeIndexSources (indexDetails, getIndexes, primaryIndexStats, seconda
         getIndexes[inxKey].indexFreeStorageSize = indexDetails && indexDetails[inxKey] && indexDetails[inxKey]['block-manager'] && typeof indexDetails[inxKey]['block-manager']['file bytes available for reuse'] !== 'undefined'
             ? (indexDetails[inxKey]['block-manager']['file bytes available for reuse']/conf.SCALE_MB).toFixed(4)
             : -1;
-        indexFreeStorageSize += getIndexes[inxKey].indexFreeStorageSize
+        if (getIndexes[inxKey].indexFreeStorageSize !== -1) {
+            indexFreeStorageSize += parseFloat(getIndexes[inxKey].indexFreeStorageSize)
+        }
     }
-    return {indexes: getIndexes, since: since, indexFreeStorageSize: indexFreeStorageSize > -1 ? (indexFreeStorageSize/conf.SCALE_MB).toFixed(4) : -1}
+    return {indexes: getIndexes, since: since, indexFreeStorageSize: indexFreeStorageSize > -1 ? indexFreeStorageSize.toFixed(4) : -1}
 }
 
 module.exports = {

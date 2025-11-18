@@ -10,12 +10,13 @@ var _collections = []
 var _info = []
 var isTenantDBPartitioned = false
 var openDhandles = {primary: {start: 0, end: 0}, secondary: {start: 0, end: 0}}
+var isSharded = db.serverStatus().process === "mongos"
 
 db.getMongo().setReadPref('primary');
-openDhandles.primary.start = db.serverStatus().wiredTiger.connection['files currently open'];
+openDhandles.primary.start = isSharded == false ? db.serverStatus().wiredTiger.connection['files currently open'] : -1;
 
 db.getMongo().setReadPref('secondary');
-openDhandles.secondary.start = db.serverStatus().wiredTiger.connection['files currently open'];
+openDhandles.secondary.start = isSharded == false ? db.serverStatus().wiredTiger.connection['files currently open'] : -1;
 
 _info.push({level: "info", name: `mongmeta v${conf.VERSION} - ${new Date().toISOString()}`})
 _info.push({level: "info", name: `MongoDB version: ${db.version()}`})
@@ -25,21 +26,23 @@ if (!onPrem) {
     _info.push({level: "info", name: "onPrem is unset, by default mongmeta captures Atlas deployments, if you want to run this for self hosted deployments please add the eval option --eval 'var onPrem = true'"})
 }
 
-var multiTenancyOverride = (typeof multiTenancyOverride === "undefined") ? false : multiTenancyOverride
-var tenantIds = (typeof tenantIds === "undefined") ? false : tenantIds
-var isMultiTenant = db.serverStatus().catalogStats.collections > 1000
-if (!multiTenancyOverride && isMultiTenant && !tenantIds) {
-    _info.push({level: "info", name: "You have suspected multi-tenancy/micro-services architecture, set multiTenancyOverride or tenantIds to get full collection/index size stats"})
-    _info.push({level: "info", name: "   If you want to assume the risk of activating many dhandles and in turn causing performance issues, you can add the eval option --eval 'var multiTenancyOverride = true' (mainly reserved for lower environments)."})
-    _info.push({level: "info", name: "   Alternatively, you can set the tenantIds to the tenants you want to pull data from and avoid performance issues depending on the number of collection namespaces with eval option 'var tenantIds = [\"<tenantId1>\", \"<tenantId2<>\"]'. The script will try to find those keys in either the db name or collection name, if this is not the method of your tenant partitioning, then this will not work."})
-}
-
-
 var serverInfo = db.serverBuildInfo()
 
 var dbs = db.adminCommand({listDatabases: 1})
 dbs.databases = dbs['databases'].filter(_db => !conf.RESERVED_DBS.includes(_db.name));
 
+var multiTenancyOverride = (typeof multiTenancyOverride === "undefined") ? false : multiTenancyOverride
+var tenantIds = (typeof tenantIds === "undefined") ? false : tenantIds
+var isMultiTenant = isSharded == false ? db.serverStatus().catalogStats.collections > 1000 : dbs.databases.reduce((acc, _db) => {
+    acc += db.getSiblingDB(_db.name).getCollectionNames().length
+    return acc 
+}, 0) > 1000;
+
+if (!multiTenancyOverride && isMultiTenant && !tenantIds) {
+    _info.push({level: "info", name: "You have suspected multi-tenancy/micro-services architecture, set multiTenancyOverride or tenantIds to get full collection/index size stats"})
+    _info.push({level: "info", name: "   If you want to assume the risk of activating many dhandles and in turn causing performance issues, you can add the eval option --eval 'var multiTenancyOverride = true' (mainly reserved for lower environments)."})
+    _info.push({level: "info", name: "   Alternatively, you can set the tenantIds to the tenants you want to pull data from and avoid performance issues depending on the number of collection namespaces with eval option 'var tenantIds = [\"<tenantId1>\", \"<tenantId2<>\"]'. The script will try to find those keys in either the db name or collection name, if this is not the method of your tenant partitioning, then this will not work."})
+}
 
 // collection and index stats witch activate dHandles
 for (var _db of dbs.databases) {
@@ -139,10 +142,10 @@ for (var _db of dbs.databases) {
     isTenantDBPartitioned = false
 }
 
-openDhandles.secondary.end = db.serverStatus().wiredTiger.connection['files currently open'];
+openDhandles.secondary.end = isSharded == false ? db.serverStatus().wiredTiger.connection['files currently open'] : -1;
 
 db.getMongo().setReadPref('primary');
-openDhandles.primary.end = db.serverStatus().wiredTiger.connection['files currently open'];
+openDhandles.primary.end = isSharded == false ? db.serverStatus().wiredTiger.connection['files currently open'] : -1;
 
 _info.push({level: "info", name: `Open dHandles primary: ${openDhandles.primary.start} -> ${openDhandles.primary.end} (${openDhandles.primary.end - openDhandles.primary.start})`})
 _info.push({level: "info", name: `Open dHandles secondary: ${openDhandles.secondary.start} -> ${openDhandles.secondary.end} (${openDhandles.secondary.end - openDhandles.secondary.start})`})
